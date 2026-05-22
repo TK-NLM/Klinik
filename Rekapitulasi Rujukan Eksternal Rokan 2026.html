@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Rekapitulasi Rujukan Eksternal 2026</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Georgia', 'Times New Roman', serif;
+      min-height: 100vh;
+      background: linear-gradient(135deg, #F8FAFC 0%, #EFF6FF 50%, #F0FDF4 100%);
+      padding: 32px 24px;
+    }
+
+    /* Header */
+    .header-wrap { max-width: 860px; margin: 0 auto 28px; }
+    .header-box {
+      background: #1E293B;
+      border-radius: 16px;
+      padding: 24px 32px;
+      box-shadow: 0 8px 32px rgba(30,41,59,0.18);
+      position: relative;
+      overflow: hidden;
+    }
+    .header-box .blob1 {
+      position: absolute; top: -30px; right: -30px;
+      width: 120px; height: 120px;
+      background: rgba(59,130,246,0.12); border-radius: 50%;
+    }
+    .header-box .blob2 {
+      position: absolute; bottom: -20px; left: 60px;
+      width: 80px; height: 80px;
+      background: rgba(34,197,94,0.10); border-radius: 50%;
+    }
+    .header-box p.subtitle {
+      color: #94A3B8; font-size: 11px; letter-spacing: 3px;
+      text-transform: uppercase; margin-bottom: 6px;
+    }
+    .header-box h1 { color: #F8FAFC; font-size: 22px; margin-bottom: 4px; font-weight: 700; }
+    .header-box p.meta { color: #64748B; font-size: 12px; }
+
+    /* Summary cards */
+    .cards { max-width: 860px; margin: 0 auto 24px; display: flex; gap: 12px; flex-wrap: wrap; }
+    .card {
+      border-radius: 12px; padding: 14px 20px;
+      flex: 1 1 200px; cursor: pointer;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+      transition: box-shadow 0.2s;
+      border: 1.5px solid transparent;
+    }
+    .card:hover { box-shadow: 0 4px 16px rgba(0,0,0,0.12); }
+    .card .name { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; font-family: monospace; margin-bottom: 4px; }
+    .card .num { font-size: 28px; font-weight: 800; line-height: 1; }
+    .card .label { font-size: 11px; color: #64748B; margin-top: 2px; }
+
+    /* Dropdown filter */
+    .filter-bar { max-width: 860px; margin: 0 auto 16px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .filter-bar label { font-size: 12px; color: #64748B; font-weight: 600; letter-spacing: 0.5px; }
+    .select-wrap { position: relative; }
+    .select-wrap select {
+      appearance: none; -webkit-appearance: none;
+      border-radius: 10px; padding: 8px 36px 8px 14px;
+      font-size: 12px; font-family: monospace; font-weight: 600;
+      cursor: pointer; outline: none; min-width: 220px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+      transition: all 0.2s;
+    }
+    .select-wrap .arrow {
+      position: absolute; right: 12px; top: 50%; transform: translateY(-50%);
+      font-size: 10px; pointer-events: none;
+    }
+    .reset-btn {
+      font-size: 12px; padding: 6px 14px; border-radius: 20px;
+      cursor: pointer; border: 1px solid transparent;
+      font-family: inherit; transition: opacity 0.2s;
+    }
+    .reset-btn:hover { opacity: 0.75; }
+    .filter-info { font-size: 11px; color: #94A3B8; }
+
+    /* Table */
+    .table-wrap {
+      max-width: 860px; margin: 0 auto;
+      background: #fff; border-radius: 16px;
+      overflow: hidden; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+    table { width: 100%; border-collapse: collapse; }
+    thead tr { background: #1E293B; }
+    thead th {
+      padding: 14px 20px; font-size: 11px; letter-spacing: 2px;
+      text-transform: uppercase; font-weight: 600;
+      color: #94A3B8; user-select: none;
+      transition: color 0.15s;
+    }
+    thead th.sortable { cursor: pointer; }
+    thead th.sortable:hover { color: #CBD5E1; }
+    thead th.active { color: #F8FAFC; }
+    thead th.align-right { text-align: right; }
+    thead th.align-left { text-align: left; }
+    .sort-icon { font-size: 10px; margin-left: 4px; opacity: 0.35; }
+    .sort-icon.active { opacity: 1; }
+
+    tbody tr { border-bottom: 1px solid #F1F5F9; transition: background 0.15s; }
+    tbody tr:nth-child(odd) { background: #FAFAFA; }
+    tbody tr:nth-child(even) { background: #fff; }
+    tbody tr:hover { background: #F1F5F9; }
+    tbody td { padding: 13px 20px; }
+    .td-num { color: #CBD5E1; font-size: 12px; font-family: monospace; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 20px;
+      font-size: 11px; font-weight: 600; letter-spacing: 0.5px; font-family: monospace;
+    }
+    .td-faskes { font-size: 13px; color: #334155; font-weight: 500; }
+    .td-jumlah { text-align: right; }
+    .circle {
+      display: inline-block; width: 32px; height: 32px;
+      border-radius: 50%; line-height: 32px; text-align: center;
+      font-size: 13px; font-weight: 800; color: #fff;
+    }
+    .bar-wrap { display: flex; align-items: center; gap: 8px; min-width: 120px; }
+    .bar-bg { flex: 1; height: 6px; background: #F1F5F9; border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 4px; transition: width 0.4s; }
+    .bar-pct { font-size: 11px; color: #94A3B8; min-width: 30px; }
+
+    tfoot tr { background: #F8FAFC; border-top: 2px solid #E2E8F0; }
+    tfoot td { padding: 14px 20px; }
+    .tfoot-label { font-size: 12px; color: #64748B; font-weight: 600; }
+    .tfoot-total { text-align: right; font-size: 18px; font-weight: 800; color: #1E293B; }
+
+    .footer-note { text-align: center; color: #CBD5E1; font-size: 11px; margin-top: 20px; }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <div class="header-wrap">
+    <div class="header-box">
+      <div class="blob1"></div>
+      <div class="blob2"></div>
+      <p class="subtitle">Rekapitulasi Rujukan Eksternal</p>
+      <h1>Daftar Rujukan Pasien per Dokter</h1>
+      <p class="meta">Periode 1 Januari – 30 April 2026 &nbsp;·&nbsp; <span id="grand-total"></span> total rujukan</p>
+    </div>
+  </div>
+
+  <!-- Summary cards -->
+  <div class="cards" id="cards"></div>
+
+  <!-- Dropdown filter -->
+  <div class="filter-bar">
+    <label>Filter Dokter DPJP:</label>
+    <div class="select-wrap">
+      <select id="filter-select" onchange="applyFilter(this.value)">
+        <option value="SEMUA">— Semua Dokter —</option>
+      </select>
+      <span class="arrow" id="arrow-icon" style="color:#94A3B8;">▼</span>
+    </div>
+    <button class="reset-btn" id="reset-btn" onclick="applyFilter('SEMUA')" style="display:none;">Reset ✕</button>
+    <span class="filter-info" id="filter-info"></span>
+  </div>
+
+  <!-- Table -->
+  <div class="table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="align-left">#</th>
+          <th class="align-left sortable" id="th-dokter" onclick="handleSort('dokter')">
+            Dokter DPJP <span class="sort-icon" id="icon-dokter">⇅</span>
+          </th>
+          <th class="align-left sortable" id="th-faskes" onclick="handleSort('faskes')">
+            Faskes Rujukan <span class="sort-icon" id="icon-faskes">⇅</span>
+          </th>
+          <th class="align-right sortable" id="th-jumlah" onclick="handleSort('jumlah')">
+            Jumlah <span class="sort-icon" id="icon-jumlah">⇅</span>
+          </th>
+          <th class="align-left">Proporsi</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+      <tfoot>
+        <tr>
+          <td colspan="3" class="tfoot-label" id="tfoot-label">Total rujukan semua dokter</td>
+          <td class="tfoot-total" id="tfoot-total"></td>
+          <td></td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+
+  <p class="footer-note">Klik header kolom untuk sort · Pilih dropdown untuk filter · Data: Jan–Apr 2026</p>
+
+<script>
+  const raw = [
+    { dokter: "DR YOLANDA SYAFITRI",    faskes: "RS AZ-ZAHRA",                  jumlah: 5  },
+    { dokter: "DR YOLANDA SYAFITRI",    faskes: "RS AWAL BROS SUDIRMAN",         jumlah: 2  },
+    { dokter: "DR YOLANDA SYAFITRI",    faskes: "RS AWAL BROS UJUNG BATU",       jumlah: 1  },
+    { dokter: "DR YOLANDA SYAFITRI",    faskes: "RS AZ-ZAHRA UJUNG BATU",        jumlah: 1  },
+    { dokter: "DR YOLANDA SYAFITRI",    faskes: "RSIA ZAINAB",                   jumlah: 1  },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS AWAL BROS UJUNG BATU",       jumlah: 15 },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS AWAL BROS SUDIRMAN",         jumlah: 13 },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS AZ-ZAHRA",                   jumlah: 13 },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS AZ-ZAHRA UJUNG BATU",        jumlah: 11 },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS TANDUN",                     jumlah: 10 },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "KLINIK UTAMA NUSA LIMA",        jumlah: 3  },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS SYAFIRA",                    jumlah: 3  },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS AWAL BROS PANAM",            jumlah: 2  },
+    { dokter: "DR. M. MAFIRAH DANI",    faskes: "RS EKA HOSPITAL PEKANBARU",     jumlah: 1  },
+    { dokter: "DRG. PUTI DHIAANI AMOYS",faskes: "RS SYAFIRA",                    jumlah: 3  },
+  ];
+
+  const COLORS = {
+    "DR YOLANDA SYAFITRI":     { bg: "#EFF6FF", accent: "#3B82F6", badge: "#DBEAFE", text: "#1D4ED8" },
+    "DR. M. MAFIRAH DANI":     { bg: "#F0FDF4", accent: "#22C55E", badge: "#DCFCE7", text: "#15803D" },
+    "DRG. PUTI DHIAANI AMOYS": { bg: "#FFF7ED", accent: "#F97316", badge: "#FED7AA", text: "#C2410C" },
+  };
+
+  const doctors = [...new Set(raw.map(d => d.dokter))];
+  const grandTotal = raw.reduce((s, r) => s + r.jumlah, 0);
+
+  let currentFilter = "SEMUA";
+  let sortCol = "jumlah";
+  let sortDir = "desc";
+
+  // Init grand total
+  document.getElementById("grand-total").textContent = grandTotal;
+
+  // Build summary cards
+  const cardsEl = document.getElementById("cards");
+  doctors.forEach(d => {
+    const c = COLORS[d];
+    const total = raw.filter(r => r.dokter === d).reduce((s, r) => s + r.jumlah, 0);
+    const div = document.createElement("div");
+    div.className = "card";
+    div.id = "card-" + d.replace(/\W/g, "_");
+    div.style.background = c.bg;
+    div.style.borderColor = c.accent + "30";
+    div.innerHTML = `
+      <div class="name" style="color:${c.text}">${d}</div>
+      <div class="num" style="color:${c.accent}">${total}</div>
+      <div class="label">rujukan</div>`;
+    div.onclick = () => applyFilter(currentFilter === d ? "SEMUA" : d);
+    cardsEl.appendChild(div);
+  });
+  // "Semua" card
+  const allCard = document.createElement("div");
+  allCard.className = "card";
+  allCard.id = "card-SEMUA";
+  allCard.style.background = "#1E293B";
+  allCard.style.boxShadow = "0 0 0 2.5px #94A3B8";
+  allCard.innerHTML = `
+    <div class="name" style="color:#94A3B8">SEMUA DOKTER</div>
+    <div class="num" style="color:#F8FAFC">${grandTotal}</div>
+    <div class="label">total</div>`;
+  allCard.onclick = () => applyFilter("SEMUA");
+  cardsEl.appendChild(allCard);
+
+  // Populate dropdown
+  const sel = document.getElementById("filter-select");
+  doctors.forEach(d => {
+    const opt = document.createElement("option");
+    opt.value = d; opt.textContent = d;
+    sel.appendChild(opt);
+  });
+
+  function applyFilter(val) {
+    currentFilter = val;
+    sel.value = val;
+
+    // Style dropdown
+    if (val === "SEMUA") {
+      sel.style.background = "#1E293B";
+      sel.style.color = "#F8FAFC";
+      sel.style.borderColor = "#334155";
+      document.getElementById("arrow-icon").style.color = "#94A3B8";
+      document.getElementById("reset-btn").style.display = "none";
+      document.getElementById("filter-info").textContent = "";
+    } else {
+      const c = COLORS[val];
+      sel.style.background = c.badge;
+      sel.style.color = c.text;
+      sel.style.borderColor = c.accent + "60";
+      document.getElementById("arrow-icon").style.color = c.text;
+      const rb = document.getElementById("reset-btn");
+      rb.style.display = "inline-block";
+      rb.style.background = c.badge;
+      rb.style.color = c.text;
+      rb.style.borderColor = c.accent + "40";
+    }
+
+    // Update card highlights
+    doctors.forEach(d => {
+      const card = document.getElementById("card-" + d.replace(/\W/g, "_"));
+      const c = COLORS[d];
+      card.style.boxShadow = val === d
+        ? `0 0 0 2.5px ${c.accent}` : "0 2px 8px rgba(0,0,0,0.06)";
+    });
+    allCard.style.boxShadow = val === "SEMUA"
+      ? "0 0 0 2.5px #94A3B8" : "0 2px 8px rgba(0,0,0,0.10)";
+
+    renderTable();
+  }
+
+  function handleSort(col) {
+    if (sortCol === col) {
+      sortDir = sortDir === "asc" ? "desc" : "asc";
+    } else {
+      sortCol = col;
+      sortDir = col === "jumlah" ? "desc" : "asc";
+    }
+    updateSortIcons();
+    renderTable();
+  }
+
+  function updateSortIcons() {
+    ["dokter", "faskes", "jumlah"].forEach(col => {
+      const th = document.getElementById("th-" + col);
+      const icon = document.getElementById("icon-" + col);
+      if (col === sortCol) {
+        th.classList.add("active");
+        icon.classList.add("active");
+        icon.textContent = sortDir === "asc" ? "▲" : "▼";
+      } else {
+        th.classList.remove("active");
+        icon.classList.remove("active");
+        icon.textContent = "⇅";
+      }
+    });
+  }
+
+  function renderTable() {
+    const filtered = currentFilter === "SEMUA"
+      ? raw : raw.filter(d => d.dokter === currentFilter);
+
+    const sorted = [...filtered].sort((a, b) => {
+      let cmp = 0;
+      if (sortCol === "jumlah") cmp = a.jumlah - b.jumlah;
+      else if (sortCol === "dokter") cmp = a.dokter.localeCompare(b.dokter);
+      else if (sortCol === "faskes") cmp = a.faskes.localeCompare(b.faskes);
+      return sortDir === "asc" ? cmp : -cmp;
+    });
+
+    const maxVal = currentFilter === "SEMUA"
+      ? Math.max(...raw.map(d => d.jumlah))
+      : Math.max(...filtered.map(d => d.jumlah));
+
+    const tbody = document.getElementById("tbody");
+    tbody.innerHTML = "";
+
+    sorted.forEach((row, i) => {
+      const c = COLORS[row.dokter];
+      const pct = Math.round((row.jumlah / maxVal) * 100);
+      const tr = document.createElement("tr");
+      tr.innerHTML = `
+        <td class="td-num">${i + 1}</td>
+        <td><span class="badge" style="background:${c.badge};color:${c.text}">${row.dokter}</span></td>
+        <td class="td-faskes">${row.faskes}</td>
+        <td class="td-jumlah">
+          <span class="circle" style="background:${c.accent}">${row.jumlah}</span>
+        </td>
+        <td>
+          <div class="bar-wrap">
+            <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${c.accent}"></div></div>
+            <span class="bar-pct">${pct}%</span>
+          </div>
+        </td>`;
+      tbody.appendChild(tr);
+    });
+
+    const subtotal = sorted.reduce((s, r) => s + r.jumlah, 0);
+    document.getElementById("tfoot-label").textContent =
+      currentFilter !== "SEMUA" ? `Total rujukan — ${currentFilter}` : "Total rujukan semua dokter";
+    document.getElementById("tfoot-total").textContent = subtotal;
+
+    if (currentFilter !== "SEMUA") {
+      document.getElementById("filter-info").textContent = `Menampilkan ${sorted.length} faskes rujukan`;
+    } else {
+      document.getElementById("filter-info").textContent = "";
+    }
+  }
+
+  // Initial render
+  updateSortIcons();
+  renderTable();
+</script>
+</body>
+</html>
