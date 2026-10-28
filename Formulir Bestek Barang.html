@@ -1,0 +1,506 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Formulir Bestek Barang</title>
+<style>
+/* Layout: wizard kiri-atas (satu pertanyaan per langkah), pratinjau kertas A4 di akhir */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --ink:#1d2622; --muted:#5f6b66; --line:#d5dcd8;
+  --accent:#1f6f5c; --accent-ink:#ffffff; --accent-soft:#e3f0ec; --danger:#b3261e;
+  --f-ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --f-doc: Arial, "Liberation Sans", Helvetica, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#141917; --panel:#1c2320; --ink:#e6ece9; --muted:#9aa8a2; --line:#33403b;
+  --accent:#5fbfa5; --accent-ink:#0e1513; --accent-soft:#22332d; --danger:#f2b8b5; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#141917; --panel:#1c2320; --ink:#e6ece9; --muted:#9aa8a2; --line:#33403b;
+  --accent:#5fbfa5; --accent-ink:#0e1513; --accent-soft:#22332d; --danger:#f2b8b5; color-scheme:dark}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0}
+body{background:var(--bg);color:var(--ink);font:15px/1.5 var(--f-ui);
+  padding-block:24px 48px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.wrap{max-width:760px;margin:0 auto;display:grid;gap:16px}
+header.top h1{font-size:20px;margin:0 0 2px;text-wrap:balance}
+header.top p{margin:0;color:var(--muted);font-size:13px}
+
+.progress{display:flex;gap:4px}
+.progress span{flex:1;height:5px;border-radius:3px;background:var(--line)}
+.progress span.done{background:var(--accent)}
+.steplabel{font-size:12px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:20px;display:grid;gap:16px}
+.card h2{margin:0;font-size:18px;text-wrap:balance}
+.card .hint{margin:-8px 0 0;color:var(--muted);font-size:13px}
+.field{display:grid;gap:6px;min-width:0}
+.field label{font-weight:600;font-size:14px}
+.field small{color:var(--muted);font-size:12px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+input[type=text],input[type=number],input[type=date],select,textarea{
+  width:100%;font:inherit;color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:9px 10px}
+textarea{min-height:70px;resize:vertical}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.invalid{border-color:var(--danger)!important}
+.err{color:var(--danger);font-size:13px}
+.checks{display:grid;gap:8px}
+.checks label{display:flex;gap:8px;align-items:flex-start;font-weight:400}
+.checks input{margin-top:3px}
+
+.item{border:1px solid var(--line);border-radius:8px;padding:14px;display:grid;gap:12px}
+.item-head{display:flex;justify-content:space-between;align-items:center;gap:8px}
+.item-head b{font-size:14px}
+
+.nav{display:flex;gap:8px;flex-wrap:wrap;justify-content:space-between}
+button{font:inherit;cursor:pointer;border-radius:6px;padding:9px 16px;border:1px solid var(--line);background:var(--panel);color:var(--ink)}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button.ghost{background:transparent}
+button.link{border:0;background:none;color:var(--accent);padding:4px 0;text-decoration:underline}
+button.small{padding:5px 10px;font-size:13px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+.note{font-size:13px;color:var(--muted)}
+
+/* ---------- Dokumen Bestek (kertas) ---------- */
+.paperwrap{overflow-x:auto}
+.paper{background:#fff;color:#000;width:210mm;min-height:297mm;margin:0 auto;padding:20mm 20mm 22mm;
+  font:11pt/1.45 var(--f-doc);box-shadow:0 1px 6px rgba(0,0,0,.18)}
+.paper p{margin:0 0 6pt;text-align:justify}
+.kop{text-align:center;border-bottom:3px double #000;padding-bottom:4pt;margin-bottom:12pt}
+.kop .nm{font-size:16pt;font-weight:700}
+.kop .al{font-size:10pt;font-weight:700}
+.judul{text-align:center;font-weight:700;font-size:12pt;text-decoration:underline;margin:0 0 10pt}
+table.id{border-collapse:collapse;margin-bottom:8pt}
+table.id td{padding:1.5pt 4pt 1.5pt 0;vertical-align:top}
+table.id td:first-child{width:32mm}
+table.id td:nth-child(2){width:5mm}
+.h{font-weight:700;margin:10pt 0 4pt;page-break-after:avoid}
+.sub{font-weight:700;margin:8pt 0 4pt 6mm;page-break-after:avoid}
+.ind{margin-left:6mm!important}
+ul.dash{list-style:none;margin:0 0 4pt;padding-left:12mm}
+ul.dash>li{position:relative;margin-bottom:4pt;text-align:justify}
+ul.dash>li::before{content:"-";position:absolute;left:-6mm}
+ol.alpha{list-style:lower-alpha;margin:2pt 0 4pt;padding-left:6mm}
+ol.alpha li{margin-bottom:2pt}
+table.obj{width:100%;border-collapse:collapse;margin:4pt 0}
+table.obj>thead>tr>th,table.obj>tbody>tr>td{border:1px solid #000;padding:3pt 5pt;vertical-align:top}
+table.obj th{background:#d9d9d9;text-align:center}
+table.obj>tbody>tr>td.c{text-align:center}
+table.obj tr{page-break-inside:avoid}
+table.spec{border-collapse:collapse;font-size:10pt}
+table.spec td{padding:0 3pt 0 0;vertical-align:top;border:0}
+table.spec td:first-child{white-space:nowrap}
+.fn{font-size:8pt;font-style:italic;margin-top:2pt}
+.ttd{display:flex;justify-content:flex-end;margin-top:14pt;page-break-inside:avoid}
+.ttd div{width:80mm;text-align:center}
+.ttd .sp{height:22mm}
+.ttd .nama{font-weight:700;text-decoration:underline}
+.docfoot{margin-top:18pt;font-size:9pt;color:#333;border-top:1px solid #999;padding-top:3pt}
+
+@media print{
+  @page{size:A4;margin:18mm 20mm 18mm}
+  body{background:#fff;padding:0}
+  .noprint{display:none!important}
+  .wrap{max-width:none;display:block}
+  .paperwrap{overflow:visible}
+  .paper{box-shadow:none;margin:0;width:auto;min-height:auto;padding:0}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header class="top noprint">
+    <h1>Formulir Bestek Pengadaan Barang</h1>
+    <p>PT Nusa Lima Medika · Jawab pertanyaan satu per satu, lalu cetak atau simpan sebagai PDF.</p>
+  </header>
+
+  <div class="noprint" id="wizardTop">
+    <div class="toolbar">
+      <span class="steplabel" id="stepLabel"></span>
+      <span>
+        <button class="link" type="button" id="btnContoh">Isi contoh (printer farmasi)</button>
+        &nbsp;·&nbsp;
+        <button class="link" type="button" id="btnReset">Kosongkan</button>
+      </span>
+    </div>
+    <div class="progress" id="progress" style="margin-top:8px"></div>
+  </div>
+
+  <form id="wizard" class="noprint" novalidate>
+
+    <!-- 1 -->
+    <section class="card step" data-title="Identitas Bestek">
+      <h2>Identitas Bestek</h2>
+      <p class="hint">Nomor akan disusun otomatis: nomor urut/NLM/BESTEK/bulan Romawi/tahun.</p>
+      <div class="row">
+        <div class="field"><label for="noUrut">Nomor urut Bestek</label><input type="text" id="noUrut" data-req placeholder="mis. 237"></div>
+        <div class="field"><label for="tanggal">Tanggal Bestek</label><input type="date" id="tanggal" data-req></div>
+      </div>
+      <div class="field"><label for="noPreview">Nomor yang terbentuk</label><input type="text" id="noPreview" readonly tabindex="-1"></div>
+    </section>
+
+    <!-- 2 -->
+    <section class="card step" data-title="Pekerjaan dan Lokasi">
+      <h2>Pekerjaan dan lokasi</h2>
+      <div class="field"><label for="pekerjaan">Nama pekerjaan</label><input type="text" id="pekerjaan" data-req placeholder="mis. Pengadaan Printer Farmasi"><small>Diawali kata "Pengadaan".</small></div>
+      <div class="row">
+        <div class="field"><label for="lokasi">Lokasi</label>
+          <select id="lokasi" data-req>
+            <option value="">— pilih —</option>
+            <option>Rumah Sakit Tandun</option>
+            <option>Klinik Utama Nusa Lima Pekanbaru</option>
+            <option>Klinik Pratama Kasikan</option>
+          </select></div>
+        <div class="field"><label for="unit">Unit/Instalasi pengguna</label><input type="text" id="unit" data-req placeholder="mis. Instalasi Farmasi"></div>
+      </div>
+    </section>
+
+    <!-- 3 -->
+    <section class="card step" data-title="Dasar Pengadaan">
+      <h2>Dasar dan pendahuluan</h2>
+      <div class="field"><label for="au31">Nomor dokumen AU31</label><input type="text" id="au31" data-req placeholder="mis. AU.31.2a-RST/62/TW III/2026"></div>
+      <div class="field"><label for="keperluan">Barang ini dibutuhkan untuk apa?</label><textarea id="keperluan" placeholder="mis. mencetak etiket dan salinan resep di ruang pelayanan farmasi rawat jalan"></textarea><small>Opsional. Menjadi kalimat latar belakang. Kosongkan bila tidak perlu.</small></div>
+    </section>
+
+    <!-- 4 -->
+    <section class="card step" data-title="Barang dan Spesifikasi">
+      <h2>Barang dan spesifikasi</h2>
+      <p class="hint">Tambahkan satu baris untuk tiap jenis barang. Kolom yang dikosongkan tidak dicetak.</p>
+      <div id="items" style="display:grid;gap:12px"></div>
+      <div><button type="button" class="small" id="btnAddItem">+ Tambah barang</button></div>
+    </section>
+
+    <!-- 5 -->
+    <section class="card step" data-title="Ruang Lingkup">
+      <h2>Ruang lingkup pekerjaan</h2>
+      <p class="hint">Apa saja yang harus dikerjakan penyedia selain menyediakan barang?</p>
+      <div class="checks">
+        <label><input type="checkbox" id="rlKirim" checked> Pengiriman sampai lokasi penyerahan, termasuk biaya angkut</label>
+        <label><input type="checkbox" id="rlInstal"> Instalasi/pemasangan dan uji fungsi bersama pengguna</label>
+        <label><input type="checkbox" id="rlLatih"> Pelatihan singkat penggunaan bagi petugas</label>
+        <label><input type="checkbox" id="rlDok" checked> Penyerahan kartu garansi, buku manual, dan dokumen pendukung</label>
+      </div>
+      <div class="field"><label for="rlLain">Lingkup lain (opsional)</label><input type="text" id="rlLain" placeholder="mis. pembongkaran unit lama"></div>
+      <div class="field"><label for="kontrak">Jenis kontrak</label>
+        <select id="kontrak"><option value="lumsum">Lumsum (harga pasti dan tetap)</option><option value="satuan">Harga satuan</option></select></div>
+    </section>
+
+    <!-- 6 -->
+    <section class="card step" data-title="Metode Pengadaan">
+      <h2>Metode pengadaan</h2>
+      <div class="field"><label for="metode">Metode pemilihan penyedia</label>
+        <select id="metode" data-req>
+          <option value="">— pilih —</option>
+          <option value="OPL">Pengadaan Langsung (≤ Rp50 juta per faktur, ≤ Rp10 juta per item)</option>
+          <option value="PL">Penunjukan Langsung (&gt; Rp50 juta s.d. Rp200 juta, atau kriteria khusus)</option>
+          <option value="TT">Tender Terbatas (&gt; Rp200 juta)</option>
+        </select>
+        <small>Sesuai SOP UMUM-001. Kalimat metode evaluasi di Bestek diisi otomatis.</small></div>
+      <div class="field" id="sistemWrap" hidden><label for="sistem">Sistem evaluasi tender</label>
+        <select id="sistem"><option value="gugur">Sistem gugur</option><option value="nilai">Sistem nilai</option></select></div>
+      <div class="row" id="bobotWrap" hidden>
+        <div class="field"><label for="bobotTeknis">Bobot teknis (%)</label><input type="number" id="bobotTeknis" min="10" max="40" value="30"><small>10–40% (IK UMUM-001)</small></div>
+        <div class="field"><label for="bobotHarga">Bobot harga (%)</label><input type="number" id="bobotHarga" readonly tabindex="-1" value="70"></div>
+      </div>
+    </section>
+
+    <!-- 7 -->
+    <section class="card step" data-title="Pelaksanaan dan Garansi">
+      <h2>Pelaksanaan dan garansi</h2>
+      <div class="row">
+        <div class="field"><label for="durasi">Jangka waktu (hari kalender)</label><input type="number" id="durasi" min="1" data-req placeholder="mis. 14"></div>
+        <div class="field"><label for="dasarWaktu">Dihitung sejak</label>
+          <select id="dasarWaktu"><option>terbit Surat Pesanan</option><option>terbit Surat Perintah Kerja</option><option>penandatanganan Kontrak</option></select></div>
+      </div>
+      <div class="field"><label for="tempat">Tempat penyerahan barang</label><input type="text" id="tempat" data-req placeholder="mis. Instalasi Farmasi Rumah Sakit Tandun"></div>
+      <div class="field"><label for="garansi">Masa garansi (bulan)</label><input type="number" id="garansi" min="0" data-req placeholder="mis. 12"><small>Isi 0 bila mengikuti garansi standar pabrik.</small></div>
+    </section>
+
+    <!-- 8 -->
+    <section class="card step" data-title="Pembayaran">
+      <h2>Pembayaran</h2>
+      <div class="field"><label for="bayar">Cara pembayaran</label>
+        <select id="bayar">
+          <option value="bast">Transfer, lunas setelah barang diterima dan BAST ditandatangani</option>
+          <option value="tunai">Tunai/lunas saat pembelian (Pengadaan Langsung)</option>
+          <option value="sepakat">Sesuai kesepakatan dalam Surat Pesanan/Kontrak</option>
+        </select></div>
+      <div class="checks"><label><input type="checkbox" id="pdn" checked> Cantumkan syarat mengutamakan produk dalam negeri</label></div>
+    </section>
+
+    <!-- 9 -->
+    <section class="card step" data-title="Penandatangan">
+      <h2>Penandatangan</h2>
+      <div class="field"><label for="ttdNama">Nama lengkap dan gelar</label><input type="text" id="ttdNama" data-req placeholder="mis. dr. Tommy Kirana, M.M"></div>
+      <div class="row">
+        <div class="field"><label for="ttdStatus">Status jabatan</label><select id="ttdStatus"><option value="">Definitif</option><option value="Plh. ">Plh.</option><option value="Plt. ">Plt.</option></select></div>
+        <div class="field"><label for="ttdJabatan">Jabatan</label><input type="text" id="ttdJabatan" value="Manajer Operasional & Umum"></div>
+      </div>
+    </section>
+
+    <div class="err" id="errBox" hidden>Lengkapi isian yang ditandai merah sebelum lanjut.</div>
+    <div class="nav">
+      <button type="button" class="ghost" id="btnBack">Kembali</button>
+      <button type="button" class="primary" id="btnNext">Lanjut</button>
+    </div>
+  </form>
+
+  <!-- Hasil -->
+  <section id="result" hidden>
+    <div class="card noprint" style="margin-bottom:16px">
+      <div class="toolbar">
+        <div><b>Bestek siap dicetak.</b><div class="note">Periksa pratinjau. Pada jendela cetak, pilih printer atau "Simpan sebagai PDF", ukuran kertas A4, dan matikan "Header dan footer".</div></div>
+        <span style="display:flex;gap:8px;flex-wrap:wrap">
+          <button type="button" id="btnEdit">Ubah isian</button>
+          <button type="button" class="primary" id="btnPrint">Cetak / Simpan PDF</button>
+        </span>
+      </div>
+    </div>
+    <div class="paperwrap"><div class="paper" id="paper"></div></div>
+  </section>
+
+</div>
+
+<script>
+(function(){
+  const $ = (id) => document.getElementById(id);
+  const steps = [...document.querySelectorAll('.step')];
+  let cur = 0, items = [];
+  const KEY = 'nlm-bestek-barang-draft';
+
+  const BULAN = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const ROMAWI = ['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+  const SATUAN = ['','satu','dua','tiga','empat','lima','enam','tujuh','delapan','sembilan','sepuluh','sebelas'];
+  function terbilang(n){
+    n = Math.floor(Math.abs(n));
+    if (n < 12) return SATUAN[n] || 'nol';
+    if (n < 20) return terbilang(n-10) + ' belas';
+    if (n < 100) return terbilang(Math.floor(n/10)) + ' puluh' + (n%10 ? ' ' + terbilang(n%10) : '');
+    if (n < 200) return 'seratus' + (n-100 ? ' ' + terbilang(n-100) : '');
+    if (n < 1000) return terbilang(Math.floor(n/100)) + ' ratus' + (n%100 ? ' ' + terbilang(n%100) : '');
+    return String(n);
+  }
+  const esc = (s) => String(s ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+  const parseDate = (v) => { const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(v || ''); return m ? {y:+m[1], mo:+m[2], d:+m[3]} : null; };
+  const fmtTanggal = (v) => { const t = parseDate(v); return t ? `${t.d} ${BULAN[t.mo-1]} ${t.y}` : ''; };
+  const nomor = () => { const t = parseDate($('tanggal').value); const u = $('noUrut').value.trim();
+    return (u || '……') + '/NLM/BESTEK/' + (t ? ROMAWI[t.mo-1] : '…') + '/' + (t ? t.y : '……'); };
+
+  /* ---------- daftar barang ---------- */
+  const blankItem = () => ({nama:'', merk:'', type:'', fungsi:'', ukuran:'', kondisi:'Baru, original, bukan rekondisi', kelengkapan:'Sesuai standar pabrik', alkes:false, jumlah:'1', satuan:'Unit'});
+  function renderItems(){
+    const box = $('items'); box.innerHTML = '';
+    items.forEach((it, i) => {
+      const d = document.createElement('div'); d.className = 'item';
+      const f = (k, label, ph, req) => `<div class="field"><label for="it${i}_${k}">${label}</label><input type="text" id="it${i}_${k}" data-k="${k}" data-i="${i}" ${req?'data-req':''} value="${esc(it[k])}" placeholder="${ph||''}"></div>`;
+      d.innerHTML = `<div class="item-head"><b>Barang ${i+1}</b>${items.length>1?`<button type="button" class="small ghost" data-del="${i}">Hapus</button>`:''}</div>
+        ${f('nama','Nama barang','mis. Printer',true)}
+        <div class="row">${f('merk','Merk','mis. Epson')}${f('type','Type/model','mis. L3211')}</div>
+        <div class="row">${f('fungsi','Fungsi/fitur','mis. Print/Scan/Copy')}${f('ukuran','Ukuran/kapasitas','opsional')}</div>
+        <div class="row">${f('kondisi','Kondisi','')}${f('kelengkapan','Kelengkapan','')}</div>
+        <div class="row">${f('jumlah','Jumlah','1',true)}${f('satuan','Satuan','Unit',true)}</div>
+        <div class="checks"><label><input type="checkbox" id="it${i}_alkes" data-k="alkes" data-i="${i}" ${it.alkes?'checked':''}> Barang ini alat kesehatan/obat (wajib izin edar AKL/AKD/NIE)</label></div>`;
+      box.appendChild(d);
+    });
+  }
+  $('items').addEventListener('input', (e) => { const t = e.target; if (t.dataset.k == null) return;
+    items[+t.dataset.i][t.dataset.k] = t.type === 'checkbox' ? t.checked : t.value; t.classList.remove('invalid'); save(); });
+  $('items').addEventListener('click', (e) => { const i = e.target.dataset.del; if (i == null) return; items.splice(+i, 1); renderItems(); save(); });
+  $('btnAddItem').addEventListener('click', () => { items.push(blankItem()); renderItems(); save(); });
+
+  /* ---------- simpan draf (hanya di browser ini) ---------- */
+  const FIELDS = ['noUrut','tanggal','pekerjaan','lokasi','unit','au31','keperluan','rlKirim','rlInstal','rlLatih','rlDok','rlLain','kontrak','metode','sistem','bobotTeknis','durasi','dasarWaktu','tempat','garansi','bayar','pdn','ttdNama','ttdStatus','ttdJabatan'];
+  function collect(){ const o = {}; FIELDS.forEach(k => { const el = $(k); o[k] = el.type === 'checkbox' ? el.checked : el.value; }); o.items = items; return o; }
+  function apply(o){ FIELDS.forEach(k => { if (o[k] === undefined) return; const el = $(k); if (el.type === 'checkbox') el.checked = !!o[k]; else el.value = o[k]; });
+    items = (o.items && o.items.length) ? o.items : [blankItem()]; renderItems(); sync(); }
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(collect())); } catch(e){} }
+  function load(){ try { const s = localStorage.getItem(KEY); return s ? JSON.parse(s) : null; } catch(e){ return null; } }
+
+  /* ---------- tampilan dinamis ---------- */
+  function sync(){
+    $('noPreview').value = nomor();
+    const tt = $('metode').value === 'TT';
+    $('sistemWrap').hidden = !tt;
+    $('bobotWrap').hidden = !(tt && $('sistem').value === 'nilai');
+    const bt = Math.min(40, Math.max(10, +$('bobotTeknis').value || 30));
+    $('bobotHarga').value = 100 - bt;
+  }
+  $('wizard').addEventListener('input', (e) => { e.target.classList && e.target.classList.remove('invalid'); sync(); save(); });
+  $('wizard').addEventListener('change', () => { sync(); save(); });
+
+  /* ---------- navigasi ---------- */
+  function show(){
+    steps.forEach((s, i) => s.hidden = i !== cur);
+    $('stepLabel').textContent = `Langkah ${cur+1} dari ${steps.length} · ${steps[cur].dataset.title}`;
+    $('progress').innerHTML = steps.map((_, i) => `<span class="${i<=cur?'done':''}"></span>`).join('');
+    $('btnBack').style.visibility = cur === 0 ? 'hidden' : 'visible';
+    $('btnNext').textContent = cur === steps.length - 1 ? 'Selesai & lihat Bestek' : 'Lanjut';
+    $('errBox').hidden = true;
+  }
+  function valid(){
+    let ok = true;
+    steps[cur].querySelectorAll('[data-req]').forEach(el => { if (!String(el.value).trim()) { el.classList.add('invalid'); ok = false; } });
+    if (steps[cur].contains($('garansi')) && $('garansi').value !== '' && +$('garansi').value < 0) { $('garansi').classList.add('invalid'); ok = false; }
+    $('errBox').hidden = ok; return ok;
+  }
+  $('btnNext').addEventListener('click', () => {
+    if (!valid()) return;
+    if (cur < steps.length - 1) { cur++; show(); steps[cur].querySelector('input,select,textarea')?.focus(); }
+    else finish();
+  });
+  $('btnBack').addEventListener('click', () => { if (cur > 0) { cur--; show(); } });
+  $('btnEdit').addEventListener('click', () => { $('result').hidden = true; $('wizard').hidden = false; $('wizardTop').hidden = false; cur = 0; show(); window.scrollTo(0,0); });
+  $('btnPrint').addEventListener('click', () => window.print());
+
+  /* ---------- susun dokumen ---------- */
+  function finish(){
+    $('paper').innerHTML = buildDoc(collect());
+    $('wizard').hidden = true; $('wizardTop').hidden = true; $('result').hidden = false;
+    document.title = 'Bestek ' + nomor().replace(/\//g,'-') + ' ' + $('pekerjaan').value;
+    window.scrollTo(0,0);
+  }
+  function buildDoc(o){
+    const lok = o.lokasi, unit = o.unit.trim();
+    const anyAlkes = o.items.some(i => i.alkes), anyMerk = o.items.some(i => i.merk.trim());
+    const nGar = +o.garansi || 0, nDur = +o.durasi || 0;
+    const peker = o.pekerjaan.trim();
+
+    const rl = [];
+    rl.push('Penyediaan barang sesuai spesifikasi pada Objek Pekerjaan;');
+    if (o.rlKirim) rl.push('Pengiriman barang sampai ke lokasi penyerahan, termasuk biaya angkut;');
+    if (o.rlInstal) rl.push('Instalasi/pemasangan dan uji fungsi barang bersama pengguna;');
+    if (o.rlLatih) rl.push('Pelatihan singkat penggunaan barang bagi petugas pengguna;');
+    if (o.rlLain.trim()) rl.push(esc(o.rlLain.trim()).replace(/[.;]$/,'') + ';');
+    if (o.rlDok) rl.push('Penyerahan kelengkapan barang (kartu garansi, buku manual, dan dokumen pendukung).');
+    rl[rl.length-1] = rl[rl.length-1].replace(/;$/, '.');
+
+    const kontrak = o.kontrak === 'lumsum'
+      ? 'Jenis Kontrak ini adalah lumsum, yaitu kontrak atas penyelesaian seluruh pekerjaan dalam batas waktu tertentu dengan jumlah harga yang pasti dan tetap, dan segala risiko yang mungkin terjadi dalam proses penyelesaian pekerjaan sepenuhnya ditanggung oleh PIHAK KEDUA.'
+      : 'Jenis Kontrak ini adalah harga satuan, yaitu kontrak dengan harga satuan yang pasti dan tetap untuk setiap satuan barang, dengan jumlah pembayaran berdasarkan volume barang yang benar-benar diterima.';
+
+    const specRows = (it) => [['Merk', it.merk], ['Type', it.type], ['Fungsi/Fitur', it.fungsi], ['Ukuran/Kapasitas', it.ukuran],
+      ['Kondisi', it.kondisi], ['Kelengkapan', it.kelengkapan], ['Garansi', nGar ? `Resmi ${nGar} (${terbilang(nGar)}) bulan` : 'Resmi sesuai standar pabrik'],
+      ['Izin Edar', it.alkes ? 'Wajib memiliki izin edar Kemenkes (AKL/AKD/NIE)' : '']]
+      .filter(r => String(r[1]).trim()).map(r => `<tr><td>${r[0]}</td><td>:</td><td>${esc(r[1])}</td></tr>`).join('');
+    const objRows = o.items.map((it, i) => `<tr><td class="c">${i+1}</td><td>${esc(it.nama)}</td><td><table class="spec">${specRows(it)}</table></td><td class="c">${esc(it.jumlah)} ${esc(it.satuan)}</td></tr>`).join('');
+
+    const metodeNama = {OPL:'Pengadaan Langsung', PL:'Penunjukan Langsung', TT:'Tender Terbatas'}[o.metode];
+    let evalTxt;
+    if (o.metode === 'OPL') evalTxt = 'Evaluasi dilakukan terhadap kesesuaian spesifikasi teknis barang dan kewajaran harga terhadap harga pasar/Harga Perkiraan Sendiri (HPS).';
+    else if (o.metode === 'PL') evalTxt = 'Evaluasi dilakukan melalui klarifikasi teknis dan negosiasi harga terhadap penawaran calon penyedia, dengan hasil negosiasi tidak melebihi Harga Perkiraan Sendiri (HPS).';
+    else if (o.sistem === 'nilai') { const bt = Math.min(40, Math.max(10, +o.bobotTeknis || 30));
+      evalTxt = `Evaluasi penawaran menggunakan sistem nilai: evaluasi administrasi dengan sistem gugur, dilanjutkan penilaian teknis dan harga dengan bobot teknis ${bt}% dan bobot harga ${100-bt}%. Pemenang adalah penawaran dengan nilai kombinasi tertinggi. Rincian unsur penilaian dicantumkan dalam dokumen pengadaan.`; }
+    else evalTxt = 'Evaluasi penawaran menggunakan sistem gugur, meliputi evaluasi administrasi, evaluasi teknis, dan evaluasi harga. Calon pemenang adalah penawaran yang memenuhi persyaratan administrasi dan teknis dengan harga terendah yang wajar dan tidak melebihi Harga Perkiraan Sendiri (HPS).';
+
+    const bayar = {
+      bast: ['Sistem pembayaran yang berlaku dilaksanakan secara transfer, dibayarkan lunas setelah barang diterima dan Berita Acara Serah Terima Pekerjaan ditandatangani, dengan jumlah harga yang pasti &amp; tetap.',
+             'Penagihan dilengkapi dengan invoice/kuitansi, faktur pajak (bila penyedia berstatus PKP), salinan Surat Pesanan/Kontrak, dan Berita Acara Serah Terima Pekerjaan.'],
+      tunai: ['Sistem pembayaran yang berlaku dilaksanakan secara tunai/lunas pada saat pembelian dengan jumlah harga yang pasti &amp; tetap.',
+              'Bukti pembayaran berupa nota/kuitansi asli dari penyedia.'],
+      sepakat: ['Sistem pembayaran yang berlaku dilaksanakan sesuai kesepakatan yang disetujui dengan jumlah harga yang pasti &amp; tetap.'],
+    }[o.bayar];
+
+    const syarat = ['Calon penyedia barang berkomitmen menjamin seluruh pelaksanaan pekerjaan pengadaan sesuai dengan spesifikasi yang ditentukan.',
+      'Calon penyedia barang bersedia melakukan perbaikan jika terdapat spesifikasi barang yang tidak sesuai.',
+      'Barang yang diserahkan dalam kondisi baru, asli (original), bukan barang bekas/rekondisi, dan dilengkapi garansi resmi.',
+      'Calon penyedia barang memiliki legalitas usaha yang masih berlaku (NIB dan NPWP) sesuai bidang usahanya.'];
+    if (anyAlkes) syarat.push('Untuk alat kesehatan/obat, barang wajib memiliki izin edar dari Kementerian Kesehatan dan penyedia memiliki izin distribusi yang berlaku.');
+    if (o.pdn) syarat.push('Mengutamakan produk dalam negeri sepanjang tersedia dan memenuhi spesifikasi.');
+
+    const latar = o.keperluan.trim()
+      ? `<p class="ind">Pengadaan ini dilaksanakan untuk memenuhi kebutuhan ${esc(unit)} ${esc(lok)}, yaitu ${esc(o.keperluan.trim().replace(/\.$/,''))}.</p>` : '';
+    const gar = nGar ? `selama ${nGar} (${terbilang(nGar)}) bulan sejak serah terima` : 'sesuai garansi resmi pabrik sejak serah terima';
+    const objekNama = peker.replace(/^Pengadaan\s+/i, '');
+
+    return `
+      <div class="kop"><div class="nm">PT NUSA LIMA MEDIKA</div><div class="al">Jl. Ronggowarsito No. 40 Telp (0761) 28719 – 26744 Pekanbaru – Riau 28132</div></div>
+      <div class="judul">Syarat – Syarat Teknis Pekerjaan (Bestek)</div>
+      <table class="id">
+        <tr><td>Nomor</td><td>:</td><td>${esc(nomor())}</td></tr>
+        <tr><td>Tanggal</td><td>:</td><td>${esc(fmtTanggal(o.tanggal))}</td></tr>
+        <tr><td>Pekerjaan</td><td>:</td><td>${esc(peker)}</td></tr>
+        <tr><td>Lokasi</td><td>:</td><td>${esc(lok)}</td></tr>
+      </table>
+
+      <div class="h">PERSYARATAN BAHAN</div>
+      <div class="sub">1. Dasar dan Pendahuluan</div>
+      <p class="ind"><b>Dokumen AU31 nomor :</b> ${esc(o.au31)}</p>
+      ${latar}
+      <p class="ind">Bahan-bahan dasar dan spesifikasi barang harus terlebih dahulu mendapat persetujuan dari PIHAK PERTAMA atau yang mewakilinya.</p>
+      <ul class="dash"><li>Jika bahan-bahan dasar dan spesifikasi barang yang telah ditentukan oleh PIHAK PERTAMA tidak sesuai dengan yang telah disepakati maka PIHAK PERTAMA berhak menolak atau membatalkan Surat Perjanjian/Surat Pesanan atau Kontrak dan segala biaya yang timbul sehubungan dengan pembatalan tersebut sepenuhnya tanggung jawab PIHAK KEDUA.</li></ul>
+
+      <div class="sub">2. Ruang Lingkup Pekerjaan</div>
+      <ul class="dash">
+        <li>Pekerjaan yang dilaksanakan adalah ${esc(peker)} untuk ${esc(unit)} di ${esc(lok)} PT Nusa Lima Medika, meliputi:
+          <ol class="alpha">${rl.map(x => `<li>${x}</li>`).join('')}</ol></li>
+        <li>${kontrak}</li>
+      </ul>
+
+      <div class="sub">3. Objek Pekerjaan</div>
+      <p class="ind">Pengadaan ${esc(objekNama)} untuk ${esc(unit)} di ${esc(lok)} PT Nusa Lima Medika dengan uraian sebagai berikut :</p>
+      <table class="obj">
+        <thead><tr><th style="width:9mm">No</th><th style="width:38mm">Nama Barang</th><th>Spesifikasi</th><th style="width:24mm">Jumlah</th></tr></thead>
+        <tbody>${objRows}</tbody>
+      </table>
+      ${anyMerk ? '<div class="fn">Penyebutan merek mengacu pada Perdir DIR/PER/08/2020 Pasal 20.</div>' : ''}
+      <p class="ind" style="margin-top:6pt">Jika saat penyerahan barang "Objek Pekerjaan" tersebut di atas mengalami kerusakan maka PIHAK KEDUA segera menggantinya.</p>
+
+      <div class="h">SYARAT-SYARAT PEKERJAAN</div>
+      <ul class="dash">${syarat.map(x => `<li>${x}</li>`).join('')}</ul>
+
+      <div class="h">METODE EVALUASI PENAWARAN</div>
+      <ul class="dash"><li>Metode pemilihan penyedia : ${metodeNama}.</li><li>${evalTxt}</li></ul>
+
+      <div class="h">PELAKSANAAN PEKERJAAN</div>
+      <ul class="dash">
+        <li>Pengadaan tersebut di atas dilaksanakan dalam jangka waktu paling lama ${nDur} (${terbilang(nDur)}) hari kalender setelah ${esc(o.dasarWaktu)}.</li>
+        <li>Barang diserahkan di ${esc(o.tempat)}.</li>
+      </ul>
+
+      <div class="h">PENYERAHAN PEKERJAAN</div>
+      <ul class="dash">
+        <li>Setelah barang diterima dan diperiksa kesesuaiannya, dilakukan serah terima yang dibuktikan dengan Berita Acara Serah Terima Pekerjaan dan ditandatangani oleh kedua belah pihak.</li>
+        <li>Masa garansi berlaku ${gar}. Selama masa garansi, apabila barang mengalami kerusakan bukan karena kesalahan pemakaian, maka PIHAK KEDUA wajib memperbaiki/mengganti barang tersebut dan menjadi beban PIHAK KEDUA.</li>
+      </ul>
+
+      <div class="h">SISTEM PEMBAYARAN</div>
+      <ul class="dash">${bayar.map(x => `<li>${x}</li>`).join('')}</ul>
+
+      <div class="h">LAIN-LAIN</div>
+      <p class="ind">Hal-hal yang belum tercantum dalam bestek ini akan ditegaskan di dalam Kontrak Pekerjaan jika diperlukan.</p>
+
+      <div class="ttd"><div>
+        <b>PT Nusa Lima Medika</b>
+        <div class="sp"></div>
+        <div class="nama">${esc(o.ttdNama)}</div>
+        <div>${esc(o.ttdStatus)}${esc(o.ttdJabatan)}</div>
+      </div></div>
+      <div class="docfoot">nusalimamedika@gmail.com</div>`;
+  }
+
+  /* ---------- contoh & reset ---------- */
+  const CONTOH = {noUrut:'237', tanggal:'2026-08-31', pekerjaan:'Pengadaan Printer Farmasi', lokasi:'Rumah Sakit Tandun', unit:'Instalasi Farmasi',
+    au31:'AU.31.2a-RST/62/TW III/2026', keperluan:'mencetak etiket obat dan dokumen pelayanan di ruang farmasi', rlKirim:true, rlInstal:true, rlLatih:false, rlDok:true, rlLain:'',
+    kontrak:'lumsum', metode:'OPL', sistem:'gugur', bobotTeknis:'30', durasi:'14', dasarWaktu:'terbit Surat Pesanan', tempat:'Instalasi Farmasi Rumah Sakit Tandun',
+    garansi:'12', bayar:'bast', pdn:true, ttdNama:'dr. Tommy Kirana, M.M', ttdStatus:'Plh. ', ttdJabatan:'Manajer Operasional & Umum',
+    items:[{nama:'Printer', merk:'Epson', type:'L3211', fungsi:'Print/Scan/Copy', ukuran:'', kondisi:'Baru, original, bukan rekondisi', kelengkapan:'Sesuai standar pabrik (kabel, tinta awal, driver)', alkes:false, jumlah:'1', satuan:'Unit'}]};
+  $('btnContoh').addEventListener('click', () => { apply(CONTOH); save(); cur = 0; show(); });
+  $('btnReset').addEventListener('click', () => {
+    const empty = {}; FIELDS.forEach(k => { const el = $(k); empty[k] = el.type === 'checkbox' ? el.defaultChecked : (el.tagName === 'SELECT' ? el.options[0].value : el.defaultValue); });
+    empty.items = [blankItem()]; apply(empty); try { localStorage.removeItem(KEY); } catch(e){} cur = 0; show();
+    document.querySelectorAll('.invalid').forEach(el => el.classList.remove('invalid'));
+  });
+
+  /* ---------- mulai ---------- */
+  const draft = load();
+  if (draft) apply(draft); else { items = [blankItem()]; renderItems(); sync(); }
+  show();
+})();
+</script>
+</body>
+</html>
